@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { useSession } from 'next-auth/react'
+import { getSession } from 'next-auth/react'
 
 import Post, { getServerSideProps } from '../../pages/posts/[slug]'
 import { getPrismicClient } from '../../services/prismic'
@@ -23,20 +23,11 @@ describe('Post page', () => {
     })
 
     it('redirects user if no subscription is found', async () => {
-        const useSessionMocked = jest.mocked(useSession)
-        useSessionMocked.mockReturnValueOnce({
-            update: null,
-            data: null,
-            status: "unauthenticated",
-            activeSubscription: null
-        })
+        const getSessionMocked = jest.mocked(getSession)
+        getSessionMocked.mockResolvedValueOnce(null)
+
         const response = await getServerSideProps({
-            req: {
-                cookies: {},
-            },
-            params: {
-                slug: 'my-new-post'
-            }
+            params: { slug: 'my-new-post' }
         } as any)
         expect(response).toEqual(
             expect.objectContaining({
@@ -48,11 +39,12 @@ describe('Post page', () => {
     })
 
     it('loads initial data', async () => {
-        const useSessionMocked = jest.mocked(useSession)
+        const getSessionMocked = jest.mocked(getSession)
         const getPrismicClientMocked = jest.mocked(getPrismicClient)
 
         getPrismicClientMocked.mockReturnValueOnce({
             getByUID: jest.fn().mockResolvedValueOnce({
+                uid: 'my-new-post',
                 data: {
                     title: [
                         { type: 'heading', text: 'My New Post' }
@@ -65,15 +57,8 @@ describe('Post page', () => {
             })
         } as any)
 
-        useSessionMocked.mockResolvedValueOnce({
-            update: null, data: {
-                user: {
-                    name: 'John Doe',
-                    email: 'john.doe@example.com'
-                },
-                activeSubscription: 'fake-subscription',
-                expires: 'fake-expires'
-            }, status: "authenticated"
+        getSessionMocked.mockResolvedValueOnce({
+            activeSubscription: 'fake-active-subscription',
         } as any)
 
         const response = await getServerSideProps({
@@ -88,8 +73,8 @@ describe('Post page', () => {
                     post: {
                         slug: 'my-new-post',
                         title: 'My New Post',
-                        content: '<p>Post Content</p>',
-                        updatedAt: '01 de Abril de 2021'
+                        content: '<p>Post Excerpt</p>',
+                        updatedAt: '01 de abril de 2021'
                     }
                 }
             })
