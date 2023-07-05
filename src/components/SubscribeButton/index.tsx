@@ -1,5 +1,4 @@
 import { useRouter } from 'next/router';
-import { DefaultSession, Session } from 'next-auth';
 import { signIn, useSession } from 'next-auth/react';
 
 import { api } from '../../services/api';
